@@ -1,8 +1,8 @@
 from telegram import Update, ReplyKeyboardMarkup, ReplyKeyboardRemove
-from telegram.ext import Updater , MessageHandler , Filters , CallbackContext
-from key import  TOKEN
+from telegram.ext import Updater, MessageHandler, Filters, CallbackContext
+from key import TOKEN
 from openpyxl import load_workbook
-from stickers import stickers
+from connect_to_database import stickers, replies
 
 
 bd = load_workbook('database.xlsx')
@@ -20,15 +20,28 @@ def main():
     hello_handler = MessageHandler(Filters.text('Привет'), say_hello)
     murad_handler = MessageHandler(Filters.text('Мурад'), say_ahay)
     keyboard_handler = MessageHandler(Filters.text("Клавиатура"), keyboard)
+    text_handler = MessageHandler(Filters.text, say_smth)
 
     dispatcher.add_handler(murad_handler)
     dispatcher.add_handler(hello_handler)
     dispatcher.add_handler(keyboard_handler)
     dispatcher.add_handler(echo_handler)
+    dispatcher.add_handler(text_handler)
 
     updater.start_polling()
     print('Бот_старт - из комплете!')
     updater.idle()
+
+def say_smth(update: Update, context: CallbackContext):
+    name = update.message.from_user.first_name
+    text = update.message.text
+    for keyword in stickers:
+        if keyword in text:
+            update.message.reply_sticker(stickers[keyword])
+            update.message.reply_text(replies[keyword].format(name))
+            break
+    else:
+        do_echo(update, context)
 
 def do_echo(update: Update, context: CallbackContext):
     name = update.message.from_user.first_name
@@ -42,6 +55,7 @@ def do_echo(update: Update, context: CallbackContext):
                                    f'Твой текст: {text}\n'
                                    f'Твой стикер: {sticker}')
 
+
 def say_hello(update: Update, context: CallbackContext):
     name = update.message.from_user.first_name
     sticker_id = stickers['Привет']
@@ -50,9 +64,11 @@ def say_hello(update: Update, context: CallbackContext):
                                    f'Приятно познакомиться с живым человеком!\n'
                                    f'Я - бот!')
 
+
 def say_ahay(update: Update, context: CallbackContext):
     text = update.message.text
     update.message.reply_text(text=f'Ахай!')
+
 
 def keyboard(update: Update, context: CallbackContext):
     buttons = [
@@ -72,6 +88,7 @@ def keyboard(update: Update, context: CallbackContext):
 
         )
     )
+
 
 if __name__ == '__main__':
     main()
