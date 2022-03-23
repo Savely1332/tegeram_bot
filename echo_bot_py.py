@@ -2,7 +2,7 @@ from telegram import Update, ReplyKeyboardMarkup, ReplyKeyboardRemove
 from telegram.ext import Updater, MessageHandler, Filters, CallbackContext
 from key import TOKEN
 from openpyxl import load_workbook
-from connect_to_database import stickers, replies
+from connect_to_database import stickers, replies, insert_sticker
 
 
 bd = load_workbook('database.xlsx')
@@ -21,12 +21,14 @@ def main():
     murad_handler = MessageHandler(Filters.text('Мурад'), say_ahay)
     keyboard_handler = MessageHandler(Filters.text("Клавиатура"), keyboard)
     text_handler = MessageHandler(Filters.text, say_smth)
+    sticker_handler = MessageHandler(Filters.sticker, new_sticker)
 
     dispatcher.add_handler(murad_handler)
     dispatcher.add_handler(hello_handler)
     dispatcher.add_handler(keyboard_handler)
     dispatcher.add_handler(echo_handler)
     dispatcher.add_handler(text_handler)
+    dispatcher.add_handler(sticker_handler)
 
     updater.start_polling()
     print('Бот_старт - из комплете!')
@@ -89,6 +91,46 @@ def keyboard(update: Update, context: CallbackContext):
         )
     )
 
+def new_sticker(update: Update, context: CallbackContext):
+    sticker_id = update.message.sticker.file_id
+    for keyword in stickers:
+        if sticker_id == stickers[keyword]:
+            update.message.reply_text('У меня тоже такой есть!')
+            update.message.reply_sticker(sticker_id)
+            break
+    else:
+        context.user_data['new_sticker'] = sticker_id
+        update.message.reply_text('Скажи мне ключевое слово для этого стикера, и я его запомню')
+
+
+def new_keyword(update: Update, context: CallbackContext):
+    if 'new_sticker' not in context.user_data:
+        say_smth(update, context)
+    else:
+        keyword = update.message.text
+        sticker_id = context.user_data['new_sticker']
+        insert_sticker(keyword, sticker_id)
+        context.user_data.clear()
+
+def meet(update: Update, context: CallbackContext)
+    """
+    имя
+    пол
+    класс
+    id юзера
+    
+    """
+    user_id = update.message.from_user.id
+    if in_database(user_id):
+        pass # выход из диолога
+    ask_name(update, context)
+
+def ask_name(update: Update, context: CallbackContext)
+    update.message.reply_text(
+        "Вас нет в базе\n"
+        "Войдите в базу!\n"
+        "ВВведите свое имя"
+    )
 
 if __name__ == '__main__':
     main()
