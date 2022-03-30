@@ -11,20 +11,37 @@ def insert_sticker(keyword, sticker_id=None, reply_text=None):
     stickers[keyword] = sticker_id
     replies[keyword] = reply_text
 
+
 def in_database(user: int) -> bool:
     """
     123
     """
-    users_page = bd['Users']
     for row in range(2, users_page.max_row + 1):
-        if user == users_page.cell(row=row, column=1).value
+        if user == users_page.cell(row=row, column=1).value:
             return True
     return False
 
 
+def insert_user(*args): # принемает произвольное количество аргументов
+    """
+    Занос пользователя в БД
+    """
+    user_id = args[0]
+    name = args[1]
+    sex = args[2]
+    grade = args[3]
+    row = users_page.max_row + 1
+    users_page.cell(row=row, column=1).value = user_id
+    users_page.cell(row=row, column=2).value = name
+    users_page.cell(row=row, column=3).value = sex
+    users_page.cell(row=row, column=4).value = grade
+
+    bd.save('database.xlsx')
+
 
 bd = load_workbook('database.xlsx')
 stickers_page = bd['stickers']
+users_page = bd['Users']
 
 stickers = {}
 replies = {}
@@ -39,4 +56,4 @@ for row in range(2, stickers_page.max_row + 1):
 
 if __name__ == '__main__':
     print(stickers)
-    insert_sticker('до свидания', reply_text='пока пока')
+    insert_user(12345, 'sem', 'М', '10')

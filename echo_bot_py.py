@@ -2,7 +2,7 @@ from telegram import Update, ReplyKeyboardMarkup, ReplyKeyboardRemove
 from telegram.ext import Updater, MessageHandler, Filters, CallbackContext
 from key import TOKEN
 from openpyxl import load_workbook
-from connect_to_database import stickers, replies, insert_sticker
+from connect_to_database import stickers, replies, insert_sticker, insert_user
 
 
 bd = load_workbook('database.xlsx')
@@ -20,7 +20,7 @@ def main():
     hello_handler = MessageHandler(Filters.text('Привет'), say_hello)
     murad_handler = MessageHandler(Filters.text('Мурад'), say_ahay)
     keyboard_handler = MessageHandler(Filters.text("Клавиатура"), keyboard)
-    text_handler = MessageHandler(Filters.text, say_smth)
+    text_handler = MessageHandler(Filters.text, ask_grade)
     sticker_handler = MessageHandler(Filters.sticker, new_sticker)
 
     dispatcher.add_handler(murad_handler)
@@ -34,6 +34,7 @@ def main():
     print('Бот_старт - из комплете!')
     updater.idle()
 
+
 def say_smth(update: Update, context: CallbackContext):
     name = update.message.from_user.first_name
     text = update.message.text
@@ -44,6 +45,7 @@ def say_smth(update: Update, context: CallbackContext):
             break
     else:
         do_echo(update, context)
+
 
 def do_echo(update: Update, context: CallbackContext):
     name = update.message.from_user.first_name
@@ -91,6 +93,7 @@ def keyboard(update: Update, context: CallbackContext):
         )
     )
 
+
 def new_sticker(update: Update, context: CallbackContext):
     sticker_id = update.message.sticker.file_id
     for keyword in stickers:
@@ -112,7 +115,8 @@ def new_keyword(update: Update, context: CallbackContext):
         insert_sticker(keyword, sticker_id)
         context.user_data.clear()
 
-def meet(update: Update, context: CallbackContext)
+
+def meet(update: Update, context: CallbackContext):
     """
     имя
     пол
@@ -125,11 +129,79 @@ def meet(update: Update, context: CallbackContext)
         pass # выход из диолога
     ask_name(update, context)
 
-def ask_name(update: Update, context: CallbackContext)
+
+def ask_name(update: Update, context: CallbackContext):
+    """
+    имя?
+    TODO проверить имя пользователя в телеге
+    """
     update.message.reply_text(
         "Вас нет в базе\n"
         "Войдите в базу!\n"
-        "ВВведите свое имя"
+        "Введите свое имя"
+    )
+
+
+def ask_sex(update: Update, context: CallbackContext):
+    """
+    пол?
+    """
+    name = update.message.text
+    context.user_data["name"] = name
+    buttons = [
+        ["М", "Ж"]
+    ]
+    keys = ReplyKeyboardMarkup(
+        buttons,
+        resize_keyboard=True
+    )
+    reply_text = f"Введите свой пол"
+    update.message.reply_text(
+        reply_text,
+        reply_markup=keys
+    )
+
+
+def ask_grade(update: Update, context: CallbackContext):
+    """
+    класс?
+    """
+    sex = update.message.text
+    context.user_data["sex"] = sex
+    buttons = [
+        ["1-8", "9-11"]
+    ]
+    keys = ReplyKeyboardMarkup(
+        buttons,
+        resize_keyboard=True
+    )
+    reply_text = f"Введите свой класс"
+    update.message.reply_text(
+        reply_text,
+        reply_markup=keys
+    )
+
+
+def greet(update: Update, context: CallbackContext):
+    """
+    записывает в БД
+        user_id(сообщение)
+        name(контекст)
+        sex((контекст)
+        grade(из пред. сооб.)
+    """
+    grade = update.message.text
+    name = context.user_data["name"]
+    sex = context.user_data["sex"]
+    user_id = update.message.from_user.id
+
+    insert_user(user_id, name, sex, grade)
+    update.message.reply_text(
+        f'Новая запись в БД\n'
+        f'{user_id=}\n'
+        f'{name=}\n'
+        f'{sex=}\n'
+        f'{grade=}\n'
     )
 
 if __name__ == '__main__':
