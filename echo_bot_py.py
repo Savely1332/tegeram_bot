@@ -3,7 +3,7 @@ from telegram.ext import Updater, MessageHandler, Filters, CallbackContext
 from telegram.ext import CommandHandler, ConversationHandler
 from key import TOKEN
 from openpyxl import load_workbook
-from connect_to_database import stickers, replies, insert_sticker, insert_user
+from connect_to_database import stickers, replies, insert_sticker, insert_user, in_database
 
 
 WAIT_NAME, WAIT_SEX, WAIT_GRADE = range(3)
@@ -27,28 +27,28 @@ def main():
     text_handler = MessageHandler(Filters.text, ask_grade)
     sticker_handler = MessageHandler(Filters.sticker, new_sticker)
     conv_handler = ConversationHandler(
-        entry_points=[],  # точка старта
+        entry_points=[CommandHandler("start", meet)],  # точка старта
         states={
             WAIT_NAME: [MessageHandler(Filters.all, ask_sex)],
             WAIT_SEX: [MessageHandler(Filters.all, ask_grade)],
-            WAIT_GRADE: [MessageHandler(Filters.all, ask_greet],
+            WAIT_GRADE: [MessageHandler(Filters.all, greet)],
 
 
         },  # Конечное состояние автомата
         fallbacks=[],  #
 
-    ),
+    )
 
-    dispatcher.add_handler(conv_handler),
-    dispatcher.add_handler(murad_handler),
-    dispatcher.add_handler(hello_handler),
-    dispatcher.add_handler(keyboard_handler),
-    dispatcher.add_handler(echo_handler),
-    dispatcher.add_handler(text_handler),
-    dispatcher.add_handler(sticker_handler),
+    dispatcher.add_handler(murad_handler)
+    dispatcher.add_handler(hello_handler)
+    dispatcher.add_handler(keyboard_handler)
+    dispatcher.add_handler(echo_handler)
+    dispatcher.add_handler(text_handler)
+    dispatcher.add_handler(sticker_handler)
+    dispatcher.add_handler(conv_handler)
 
-    updater.start_polling(),
-    print('Бот_старт - из комплете!'),
+    updater.start_polling()
+    print('Бот_старт - из комплете!')
     updater.idle()
 
 
@@ -143,7 +143,11 @@ def meet(update: Update, context: CallbackContext):
     """
     user_id = update.message.from_user.id
     if in_database(user_id):
-        pass # выход из диолога
+        update.message.reply_text(
+            f'Добро пожаловать, {update.message.from_user.first_name}\n',
+            reply_markup=ReplyKeyboardRemove()
+        )
+        return ConversationHandler.END
     return ask_name(update, context)
 
 
@@ -155,7 +159,8 @@ def ask_name(update: Update, context: CallbackContext):
     update.message.reply_text(
         "Вас нет в базе\n"
         "Войдите в базу!\n"
-        "Введите свое имя"
+        "Введите свое имя",
+        reply_markup=ReplyKeyboardRemove()
     )
 
     return WAIT_NAME
@@ -165,6 +170,11 @@ def ask_sex(update: Update, context: CallbackContext):
     пол?
     """
     name = update.message.text
+    if not name_is_valid(name):
+        update.message.reply_text(
+            "э"
+        )
+        return WAIT_NAME
     context.user_data["name"] = name
     buttons = [
         ["М", "Ж"]
@@ -186,6 +196,11 @@ def ask_grade(update: Update, context: CallbackContext):
     класс?
     """
     sex = update.message.text
+    if not sex_is_valid(sex):
+        update.message.reply_text(
+            "э"
+        )
+        return WAIT_SEX
     context.user_data["sex"] = sex
     buttons = [
         ["1-8", "9-11"]
@@ -221,10 +236,23 @@ def greet(update: Update, context: CallbackContext):
         f'{user_id=}\n'
         f'{name=}\n'
         f'{sex=}\n'
-        f'{grade=}\n'
+        f'{grade=}',
+        reply_markup = ReplyKeyboardRemove()
     )
 
     return ConversationHandler.END
 
+def name_is_valid(name: str) -> bool:
+    return name.isalpha() and name[0].isupper() and name[1:].islower()
+
+def sex_is_valid(sex: str) -> bool:
+    return True
+
+def grede_is_valid(grade: str) -> bool:
+    return True
+
+
+
 if __name__ == '__main__':
     main()
+
