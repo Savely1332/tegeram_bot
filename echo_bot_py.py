@@ -5,9 +5,7 @@ from key import TOKEN
 from openpyxl import load_workbook
 from connect_to_database import stickers, replies, insert_sticker, insert_user, in_database
 
-
 WAIT_NAME, WAIT_SEX, WAIT_GRADE = range(3)
-
 
 bd = load_workbook('database.xlsx')
 
@@ -33,19 +31,20 @@ def main():
             WAIT_SEX: [MessageHandler(Filters.all, ask_grade)],
             WAIT_GRADE: [MessageHandler(Filters.all, greet)],
 
-
         },  # Конечное состояние автомата
         fallbacks=[],  #
 
     )
 
-    dispatcher.add_handler(murad_handler)
-    dispatcher.add_handler(hello_handler)
-    dispatcher.add_handler(keyboard_handler)
-    dispatcher.add_handler(echo_handler)
-    dispatcher.add_handler(text_handler)
-    dispatcher.add_handler(sticker_handler)
+
     dispatcher.add_handler(conv_handler)
+    dispatcher.add_handler(echo_handler)
+    dispatcher.add_handler(hello_handler)
+    dispatcher.add_handler(text_handler)
+    dispatcher.add_handler(keyboard_handler)
+    dispatcher.add_handler(sticker_handler)
+    dispatcher.add_handler(murad_handler)
+
 
     updater.start_polling()
     print('Бот_старт - из комплете!')
@@ -93,8 +92,8 @@ def say_ahay(update: Update, context: CallbackContext):
 
 def keyboard(update: Update, context: CallbackContext):
     buttons = [
-        ['1','2','3'],
-        ['привет','пока']
+        ['1', '2', '3'],
+        ['привет', 'пока']
     ]
     keys = ReplyKeyboardMarkup(
         buttons
@@ -139,7 +138,7 @@ def meet(update: Update, context: CallbackContext):
     пол
     класс
     id юзера
-    
+
     """
     user_id = update.message.from_user.id
     if in_database(user_id):
@@ -165,6 +164,7 @@ def ask_name(update: Update, context: CallbackContext):
 
     return WAIT_NAME
 
+
 def ask_sex(update: Update, context: CallbackContext):
     """
     пол?
@@ -172,7 +172,7 @@ def ask_sex(update: Update, context: CallbackContext):
     name = update.message.text
     if not name_is_valid(name):
         update.message.reply_text(
-            "э"
+            "имя должно начинаться с большой буквы и не должно содержать цыфры!"
         )
         return WAIT_NAME
     context.user_data["name"] = name
@@ -191,6 +191,7 @@ def ask_sex(update: Update, context: CallbackContext):
 
     return WAIT_SEX
 
+
 def ask_grade(update: Update, context: CallbackContext):
     """
     класс?
@@ -198,7 +199,7 @@ def ask_grade(update: Update, context: CallbackContext):
     sex = update.message.text
     if not sex_is_valid(sex):
         update.message.reply_text(
-            "э"
+            "выбери из предложеного!"
         )
         return WAIT_SEX
     context.user_data["sex"] = sex
@@ -217,6 +218,7 @@ def ask_grade(update: Update, context: CallbackContext):
 
     return WAIT_GRADE
 
+
 def greet(update: Update, context: CallbackContext):
     """
     записывает в БД
@@ -226,6 +228,11 @@ def greet(update: Update, context: CallbackContext):
         grade(из пред. сооб.)
     """
     grade = update.message.text
+    if not grade_is_valid(grade):
+        update.message.reply_text(
+            "выбери из предложеного!"
+        )
+        return WAIT_GRADE
     name = context.user_data["name"]
     sex = context.user_data["sex"]
     user_id = update.message.from_user.id
@@ -237,20 +244,22 @@ def greet(update: Update, context: CallbackContext):
         f'{name=}\n'
         f'{sex=}\n'
         f'{grade=}',
-        reply_markup = ReplyKeyboardRemove()
+        reply_markup=ReplyKeyboardRemove()
     )
 
     return ConversationHandler.END
 
+
 def name_is_valid(name: str) -> bool:
     return name.isalpha() and name[0].isupper() and name[1:].islower()
 
+
 def sex_is_valid(sex: str) -> bool:
-    return True
+    return sex == 'М' or sex == "Ж"
 
-def grede_is_valid(grade: str) -> bool:
-    return True
 
+def grade_is_valid(grade: str) -> bool:
+    return grade == "1-8" or grade == "9-11"
 
 
 if __name__ == '__main__':
